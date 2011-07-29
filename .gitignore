@@ -1,0 +1,7 @@
+*.pyc
+*.pyo
+.coverage
+build/
+dist/
+*.egg-info/
+*~
