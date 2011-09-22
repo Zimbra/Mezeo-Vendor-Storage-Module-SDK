@@ -15,8 +15,8 @@ intercepted and pre/post-processed.
 Support Materials
 -----------------
 
-An setuptools build file (`setup.py` and associated `setup.cfg`) is included
-with this packages which provides an example of building a Vendor Storage
+A setuptools build file (`setup.py` and associated `setup.cfg`) is included
+with this package which provides an example of building a Vendor Storage
 Module. For deployment, Mezeo uses setuptools' egg files containing only
 compiled code. Obviously, this requires a recent version of setuptools to
 be installed. A suitable egg file may be generated executing the following:
@@ -51,7 +51,7 @@ Simple Storage Example
 ----------------------
 
 Included with this document is a sample Vendor Storage Module called
-*simple*. It may be used as a refence when implementing a module.
+*simple*. It may be used as a reference when implementing a module.
 
 There are several things to note:
 
@@ -62,6 +62,7 @@ There are several things to note:
      this module is imported as:
      
         from modules import StorageModule
+        
 3.   Any other modules required by the Vendor Storage Module should also be
      imported.
 
