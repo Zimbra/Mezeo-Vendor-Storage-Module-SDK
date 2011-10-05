@@ -165,3 +165,45 @@ conformance with other Vendor Storage Modules, a *capacity* value is
 defined (and documented in the StorageModule class) that is leveraged by
 various system UIs. Additional values may be added to the return value if
 they are significant to the Vendor Storage Module.
+ 
+Installation and Configuration of the Storage Module:
+-----------------------------------------------------
+
+In this example, a new storage module named "newstore" will be created.
+
+Create a source directory ($SRC) for development of the new module, and copy
+the setup.py and setup.cfg files supplied by the SDK to $SRC. Also create
+a README file with any useful information concerning the new module. 
+
+Create the python package for the new module by creating a new directory in
+$SRC called "newstore", and place the python source code for the module in
+this directory, along with an "__init__.py" file (which may be empty).
+In the $SRC directory, run:
+
+	python2.6 setup.py bdist_egg
+	
+The new egg file containing "newstore" will be found in $SRC/dist - copy this
+file to each of the nodes in the MezeoCloud cluster. The egg file may be placed
+in any convenient location on the node. Add the full path name of the egg file
+(path and file name) to the 'python-path' argument in the WSGI-Daemon line in
+each of the configuration files in /opt/mezeo/conf/apache.d, and then restart
+apache on each of the nodes.
+
+The MezeoCloud Provisioning Guide contains examples of adding, updating and 
+deleting storage module ("vendor module") information to the system. A curl
+example for adding "newstore":
+
+curl -u administrator:mezeo -v -X PUT --data-binary \
+'{"module": "newstore.newstore.NewStorage", \
+  "description": "New Storage Module", \
+  "args": ["arg1", "arg2", "arg3"] }' \
+  https://cloud.example.com/cdmi/system_configuration/vendor_modules/newstore
+  
+Note: the "args" list contains the values of the arguments used to initialize
+the new storage module - see 'Module Initialization' above.
+  
+This curl command should return a '204 No Content' response.
+
+After this step is completed, new users may be provisioned with "policy" set to
+"newstore". Data for these users will then be stored in and accessed from
+"newstore".
