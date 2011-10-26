@@ -193,7 +193,7 @@ The MezeoCloud Provisioning Guide contains examples of adding, updating and
 deleting storage module ("vendor module") information to the system. A curl
 example for adding "newstore":
 
-curl -u administrator:mezeo -v -X PUT --data-binary \
+curl -u administrator -v -X PUT --data-binary \
 '{"module": "newstore.newstore.NewStorage", \
   "description": "New Storage Module", \
   "args": ["arg1", "arg2", "arg3"] }' \
