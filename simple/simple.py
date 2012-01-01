@@ -18,14 +18,10 @@ class SimpleStorage(StorageModule):
         super(SimpleStorage, self).__init__()
         self.storage_dir = storage_dir
 
-    # Public Interface
-    def new_data(self, context):
+    def __new_data(self, context):
         '''
-        Called by the platform when a new file data object needs to be reserved.
-
-        A new ticket should be created and returned by this call that can be
-        used by passing it to 'assign' along with a stream containing the data
-        to be stored in the module.
+        Internal method called by the module when a new file data object needs
+        to be reserved.
 
         :param dict context: the storage context (defined above)
         :returns: module_data - opaque module data
@@ -33,17 +29,47 @@ class SimpleStorage(StorageModule):
         '''
         return '%s.dat' % uuid1().hex
 
-    def assign(self, context, module_data, stream):
+    # Public Interface
+    def available(self, context, module_data):
         '''
-        Assigns data to the item represented by the 'module_data' reserved
-        with the 'new_data' method.
+        Checks if the 'module_data' is available using this module
 
         :param dict context: the storage context (defined above)
         :param str module_data: - opaque module data
-        :param stream stream: - input data stream
-        :returns: None
+        :returns: True if available else False
 
         '''
+        file_path = os.path.join(self.storage_dir, module_data)
+        if os.path.exists(file_path):
+            return True
+        else:
+            return False
+
+    def capabilities(self, context):
+        '''
+        Called by the platform to retrieve the module's capabilities.
+
+        Note: This simple module doesn't define any special capabilities.
+
+        :param dict context: the storage context (defined above)
+        :param str module_data: - opaque module data
+        :returns: dict - dictionary of module capabilities
+
+        '''
+        return {}
+
+    def put(self, context, stream):
+        '''
+        Assigns data in the stream to a new item represented by the
+        'module_data' reserved with the '__new_data' method.
+
+        :param dict context: the storage context (defined above)
+        :param stream stream: - input data stream
+        :returns: module_data - opaque module data
+        :rtype: str
+
+        '''
+        module_data = self.__new_data(context)
         file_path = os.path.join(self.storage_dir, module_data)
 
         try:
@@ -60,21 +86,7 @@ class SimpleStorage(StorageModule):
                 getLogger(__name__).error('Could not clean up orphan file: %s' % repr(file_path))
             raise e
 
-    def available(self, context, module_data):
-        '''
-        Checks if this storage object is present in the module.
-
-        If the storage subsystem supports asynchronously transferring data
-        the response is required to be True.
-
-        :param dict context: the storage context (defined above)
-        :param str module_data: - opaque module data
-        :returns: True if present else False
-        :rtype: boolean
-
-        '''
-        file_path = os.path.join(self.storage_dir, module_data)
-        return os.path.exists(file_path)
+        return module_data
 
     def get_read_stream(self, context, module_data):
         '''
@@ -105,19 +117,6 @@ class SimpleStorage(StorageModule):
 
         if os.path.exists(file_path):
             os.remove(file_path)
-
-    def get_size(self, context, module_data):
-        '''
-        Called to get the size of data pointed to by 'module_data'
-
-        :param dict context: the storage context
-        :param str module_data: - opaque module data
-        :returns: size of object if present
-        :rtype: int
-
-        '''
-        file_path = os.path.join(self.storage_dir, module_data)
-        return os.path.getsize(file_path)
 
     def statistics(self, context):
         '''
@@ -158,4 +157,3 @@ class SimpleStorage(StorageModule):
         stats['capacity'] = capacity
 
         return stats
-

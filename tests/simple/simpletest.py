@@ -40,9 +40,13 @@ class TestSimpleStorage(unittest.TestCase, StorageModuleTestBase):
         Warning: This method depends on the data to be compared fitting into memory!
         """
         file_path = os.path.join(self.workdir, module_data.strip('/'))
+
         written_data = open(file_path, 'r').read()
 
         if written_data != data:
             return False
         else:
             return True
+
+    def wasDeleted(self, module_data):
+        return not os.path.exists(os.path.join(self.workdir, module_data.strip('/')))

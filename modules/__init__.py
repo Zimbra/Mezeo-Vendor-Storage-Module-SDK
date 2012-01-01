@@ -26,49 +26,52 @@ class StorageModule(object):
         Initializes the vendor storage module.
         Arguments for this method are defined by the module implementation.
 
-        :param kwargs: list of arguments needed for the module to initialize
+        :param kwargs: dictionary of arguments needed for the module to initialize
         '''
         pass
 
-    def new_data(self, context):
+    def available(self, context, module_data):
         '''
-        Called by the platform when a new file data object needs to be reserved.
+        Called by the platform to validate the existence of data stored in
+        the module.
 
-        A new ticket should be created and returned by this call that can be
-        used by passing it to 'assign' along with a stream containing the data
-        to be stored in the module.
+        The method MUST return 'True' when the module_data is available.
 
         :param dict context: the storage context (defined above)
-        :returns: module_data - opaque module data
-        :rtype: str
+        :param str module_data: - opaque module data
+        :returns: bool - True if 'available' else False
 
         '''
         raise NotImplemented()
 
-    def assign(self, context, module_data, stream):
+    def capabilities(self, context):
         '''
-        Assigns data to the item represented by the 'module_data' reserved
-        with the 'new_data' method.
+        Called by the platform to retrieve the module's capabilities.
+
+        :param dict context: the storage context (defined above)
+        :param str module_data: - opaque module data
+        :returns: dict - dictionary of module capabilities
+
+        '''
+        raise NotImplemented()
+
+    def put(self, context, stream):
+        '''
+        Called by the platform to request a stream of data to be stored in
+        the module.
+
+        The method MUST return an opaque `module_data` which will be passed to
+        the other methods in the `module_data` parameter.
+        This allows the Vendor Storage Module to provide context information
+        for an object. Typical use of this value by a Vendor Storage Module
+        is to store an Object ID or path information usually encoded in a
+        JSON structure. The value returned from this method must be converted
+        to a string.
 
         :param dict context: the storage context (defined above)
         :param str module_data: - opaque module data
         :param stream stream: - input data stream
-        :returns: None
-
-        '''
-        raise NotImplemented()
-
-    def available(self, context, module_data):
-        '''
-        Checks if this storage object is present in the module.
-
-        If the storage subsystem supports asynchronously transferring data
-        the response is required to be True.
-
-        :param dict context: the storage context (defined above)
-        :param str module_data: - opaque module data
-        :returns: True if present else False
-        :rtype: boolean
+        :returns: module_data - opaque module data
 
         '''
         raise NotImplemented()
@@ -97,18 +100,6 @@ class StorageModule(object):
         :param dict context: the storage context
         :param str module_data: - opaque module data
         :returns: None
-        '''
-        raise NotImplemented()
-
-    def get_size(self, context, module_data):
-        '''
-        Called to get the size of data pointed to by 'module_data'
-
-        :param dict context: the storage context
-        :param str module_data: - opaque module data
-        :returns: size of object if present
-        :rtype: int
-
         '''
         raise NotImplemented()
 

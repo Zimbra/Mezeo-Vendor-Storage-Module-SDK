@@ -60,9 +60,9 @@ There are several things to note:
 
 2.   Each module needs to import the `StorageModule` base class (described below),
      this module is imported as:
-     
+
         from modules import StorageModule
-        
+
 3.   Any other modules required by the Vendor Storage Module should also be
      imported.
 
@@ -85,7 +85,7 @@ System. A Vendor Storage Module is not required to use this value. The set
 of functions provided through this parameter is documented in the head
 documentation of the `StorageModule` class.
 
-Module Initialization: 
+Module Initialization:
 ----------------------
     __init__(self, **kwargs)
 
@@ -96,27 +96,7 @@ such as IP address for the storage, storage path, etc. These arguments are
 specified by an administrator when the Vendor Storage Module is configured
 in the system.
 
-Creation of module opaque data: 
--------------------------------
-    new_data(self, context)
-
-The system will call this method of the Vendor Storage Module before any
-data is *assigned* to the module instance. This is an opportunity for the
-Vendor Storage Module to provide context information for an object. Typical
-use of this value by a Vendor Storage Module is to store an Object ID or
-path information usually encoded in a JSON structure. The value returned
-from this method must be converted to a string. This value is passed to
-other methods in the `module_data` parameter.
-
-Associating Data with an Object: 
---------------------------------
-    assign(self, context, module_data, stream)
-
-The assign method is used to associate a data stream with a previously
-allocated `module_data` value. The Vendor Storage Module is free to do
-whatever it likes with the data stream.
-
-Determining if Data already exists: 
+Determining if Data already exists:
 -----------------------------------
     available(self, context, module_data)
 
@@ -125,10 +105,24 @@ replicated by some other sub-system. To determine if the data associated
 with the specified `module_data` exists at a location, this method is
 called. If the method returns `True` then the Mezeo System will not attempt
 to replicate the object data to the location where the *available* call was
-made. If the Vendor Storage Module returns `False`, the module can expect
-to have its `assign` method immediately called.
+made. If the Vendor Storage Module returns `False` the Mezeo System will use
+this as a trigger to do data replication internally.
 
-Retrieving Data from an Object: 
+Associating Data with an Object:
+--------------------------------
+    put(self, context, stream)
+
+The put method is used to store a data stream using the Vendor Storage Module.
+The Vendor Storage Module is free to do whatever it likes with the data stream.
+
+The put method MUST return `module_data` which will be passed to the
+other methods in the `module_data` parameter.
+This allows the Vendor Storage Module to provide context information for an object.
+Typical use of this value by a Vendor Storage Module is to store an Object ID or
+path information usually encoded in a JSON structure. The value returned
+from this method must be converted to a string.
+
+Retrieving Data from an Object:
 -------------------------------
     get_read_stream(self, context, module_data)
 
@@ -136,7 +130,7 @@ The `get_read_stream` method provides a means by which the Mezeo System may
 read the contents of a stored object. The stream returned by this method
 must implement `read`, `close` and `seek` methods.
 
-Destroying Object Data: 
+Destroying Object Data:
 -----------------------
     delete(self, context, module_data)
 
@@ -144,28 +138,38 @@ The `delete` method is called by the Mezeo System when an object is to be
 destroyed and no longer accessed. If successful, the `module_data` provided
 to this method will never again be used.
 
-Determining the size of an Object: 
-----------------------------------
-    get_size(self, context, module_data)
-
-This method is used by the Mezeo System to ensure that ranged requests are
-valid before attempting to call the `get_read_stream` method of the
-module. This method is also employed by the system when performing a
-*server-side copy*.
-
-Storage Information: 
+Storage Information:
 --------------------
     statistics(self, context)
 
 The `statistics` method is used by the Mezeo System to provide system
 administrators with information about the storage associated with the
 instance of the Vendor Storage Module. The Vendor Storage Module is free to
-return any JSON formatted value as the response to this method call. For
+return any JSON formatted object as the response to this method call. For
 conformance with other Vendor Storage Modules, a *capacity* value is
 defined (and documented in the StorageModule class) that is leveraged by
 various system UIs. Additional values may be added to the return value if
 they are significant to the Vendor Storage Module.
- 
+
+Storage Capabilities:
+--------------------
+    capabilities(self, context)
+
+The `capabilities` method is used by the Mezeo System to provide system
+administrators and the system itself with information about the capabilities
+of storage associated with the instance of the Vendor Storage Module.
+The Vendor Storage Module is free to return any JSON formatted object
+as the response to this method call.
+
+The values returned from this method form the basis of a *CDMI Capability*
+object which will be created for the module.
+
+For example a vendor module that supports AES 256 CBC encryption would
+return a capability of:
+
+    "cdmi_encryption": ["AES_CBC_256"]
+
+
 Installation and Configuration of the Storage Module:
 -----------------------------------------------------
 
@@ -173,7 +177,7 @@ In this example, a new storage module named "newstore" will be created.
 
 Create a source directory ($SRC) for development of the new module, and copy
 the setup.py and setup.cfg files supplied by the SDK to $SRC. Also create
-a README file with any useful information concerning the new module. 
+a README file with any useful information concerning the new module.
 
 Create the python package for the new module by creating a new directory in
 $SRC called "newstore", and place the python source code for the module in
@@ -181,7 +185,7 @@ this directory, along with an "__init__.py" file (which may be empty).
 In the $SRC directory, run:
 
 	python2.6 setup.py bdist_egg
-	
+
 The new egg file containing "newstore" will be found in $SRC/dist - copy this
 file to each of the nodes in the MezeoCloud cluster. The egg file may be placed
 in any convenient location on the node. Add the full path name of the egg file
@@ -189,19 +193,19 @@ in any convenient location on the node. Add the full path name of the egg file
 each of the configuration files in /opt/mezeo/conf/apache.d, and then restart
 apache on each of the nodes.
 
-The MezeoCloud Provisioning Guide contains examples of adding, updating and 
+The MezeoCloud Provisioning Guide contains examples of adding, updating and
 deleting storage module ("vendor module") information to the system. A curl
 example for adding "newstore":
 
 curl -u administrator -v -X PUT --data-binary \
 '{"module": "newstore.newstore.NewStorage", \
-  "description": "New Storage Module", \
-  "args": ["arg1", "arg2", "arg3"] }' \
+  "label: "New Storage Module", \
+  "args": {"arg1": "arg1 value", "arg2": "arg2 value", "arg3": "arg3 value"} }' \
   https://cloud.example.com/cdmi/system_configuration/vendor_modules/newstore
-  
-Note: the "args" list contains the values of the arguments used to initialize
+
+Note: the "args" dictionary contains the keyword and values of the arguments used to initialize
 the new storage module - see 'Module Initialization' above.
-  
+
 This curl command should return a '204 No Content' response.
 
 After this step is completed, new users may be provisioned with "policy" set to

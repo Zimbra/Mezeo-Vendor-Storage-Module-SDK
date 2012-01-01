@@ -52,6 +52,23 @@ class StorageModuleTestBase(object):
         """
         raise NotImplemented("This method must be implemented in any subclasses")
 
+    def testDelete(self):
+        """
+        validate data can be deleted
+
+        """
+        datalen = 1024 * 1
+        data = self.randomBuffer(datalen)
+
+        module_data = self.connector.put(self.context, StringIO(data))
+
+        self.assertTrue(self.compareWrittenData(module_data, data),
+                        "File data contents does NOT match the data buffer written")
+
+        self.connector.delete(self.context, module_data)
+
+        self.assertTrue(self.wasDeleted(module_data),
+                        "Failed to delete data stored in the module")
 
     def testWrite(self):
         """
@@ -61,9 +78,7 @@ class StorageModuleTestBase(object):
         datalen = 1024 * 1024
         data = self.randomBuffer(datalen)
 
-        module_data = self.connector.new_data(self.context)
-
-        self.connector.assign(self.context, module_data, StringIO(data))
+        module_data = self.connector.put(self.context, StringIO(data))
 
         self.assertTrue(self.compareWrittenData(module_data, data),
                         "File data contents does NOT match the data buffer written")
@@ -76,9 +91,7 @@ class StorageModuleTestBase(object):
         datalen = 1024 * 1024
         data = self.randomBuffer(datalen)
 
-        module_data = self.connector.new_data(self.context)
-
-        self.connector.assign(self.context, module_data, StringIO(data))
+        module_data = self.connector.put(self.context, StringIO(data))
 
         self.assertTrue(self.compareWrittenData(module_data, data),
                         "Intial data written does NOT match the data buffer written")
@@ -89,18 +102,20 @@ class StorageModuleTestBase(object):
         self.assertTrue(data == read_data,
                         "Data doesn't match")
 
-    def testAvailable(self):
-        datalen = 1024 * 1024
-        data = self.randomBuffer(datalen)
+    def testStatistics(self):
+        """
+        validate the statistics dictionary returned is of proper format
+        """
+        statistics = self.connector.statistics(self.context)
 
-        module_data = self.connector.new_data(self.context)
+        if 'capacity' not in statistics:
+            self.fail("'capacity' was not found in the statistics data")
 
-        self.connector.assign(self.context, module_data, StringIO(data))
-        self.assertTrue(self.connector.available(self.context, module_data),
-                        "Module data was not available")
+        if 'total' not in statistics['capacity']:
+            self.fail("'total' was not found in the statistics data")
 
-    def testNotAvailable(self):
-        module_data = self.connector.new_data(self.context)
+        if 'free' not in statistics['capacity']:
+            self.fail("'free' was not found in the statistics data")
 
-        self.assertTrue(not self.connector.available(self.context, module_data),
-                        "Module data was available when it shouldn't be")
+        if 'used' not in statistics['capacity']:
+            self.fail("'used' was not found in the statistics data")
